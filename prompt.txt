@@ -4,9 +4,18 @@ Add a lot of details about the characters and the events in the story.
 Each paragraph should have at least 5 sentences.
 The story be about an astronaut that is lost in space. It should resemble a Shakespeare story.
 
-It is your job to generate a prompt for an image generating bot for each line in the following text.
-The prompt that you generate for each line should be descriptive and vivid.
-You can be creative if you want to.
+It is your job to generate a prompt for an image generating bot.
+The prompt that you generate for each line should be descriptive and vivid and you can be creative if you want to.
 Don't use any specific details of the story, such as names of characters or places.
 Only describe the elements in the physical environment that should be present in the image.
-Don't forget to make a prompt for each line.
+Don't generate "Generate an image of " or "Create an image of".
+
+Example:
+[Text] For months, Sarah had trained for this mission, preparing for every possible scenario and mastering the skills she would need to survive in the harsh environment of space.
+[Prompt] A girl training in a space ship simulator
+
+[Text] John was a farmer who had lived on the same land his entire life.
+[Prompt] A male farmer standing in front of a farm
+
+[Text] The book became a bestseller and inspired generations to come to pursue their dreams, no matter how daunting the challenge may seem.
+[Prompt] A person holding a book and standing in front of a large audience, with a backdrop of bright lights and applause.

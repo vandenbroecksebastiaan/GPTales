@@ -266,7 +266,7 @@ class DDIMSampler(object):
                      else np.flip(timesteps)
         total_steps = timesteps if ddim_use_original_steps else timesteps.shape[0]
 
-        iterator = tqdm(time_range, desc='DDIM Sampler', total=total_steps)
+        iterator = tqdm(time_range, desc='DDIM Sampler', total=total_steps, leave=False)
 
         for i, step in enumerate(iterator):
             index = total_steps - i - 1
