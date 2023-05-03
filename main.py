@@ -55,8 +55,11 @@ def story2audio(story):
     preload_models()
     GEN_TEMP = 0.6
     # SPEAKER = "v2/en_speaker_3" # Good, but slow
-    SPEAKER = "v2/en_speaker_5" 
-    silence = np.zeros(int(0.3 * SAMPLE_RATE))  # quarter second of silence
+    # SPEAKER = "v2/en_speaker_5" # Slow and robotic
+    # SPEAKER = "v2/en_speaker_6" # Says uhm a lot, but realistic
+    SPEAKER = "v2/en_speaker_6"
+    # TODO: add noise to the silence
+    silence = np.zeros(int(0.1 * SAMPLE_RATE))
     for idx, sentence in tqdm(enumerate(story), leave=False, desc="Generating audio", total=len(story)):
         semantic_tokens = generate_text_semantic(sentence, history_prompt=SPEAKER,
                                                  temp=GEN_TEMP, min_eos_p=0.05)
@@ -74,7 +77,7 @@ def scene2image(steps=20):
     _ = model.load_state_dict(checkpoint["state_dict"], strict=False)
     model.cuda().eval()
     sampler = DDIMSampler(model, device="cuda")
-    post_prompt = ", anime, vivid, highly detailed, 4k, 8k"
+    post_prompt = ", anime, digital art, vivid, highly detailed, 4k, 8k"
     for idx, scene in tqdm(enumerate(scenes), leave=False, desc="Generating images", total=len(scenes)):
         scene = scene.replace("[Prompt]", "")
         generate(prompt=scene+post_prompt, model=model,
@@ -82,6 +85,7 @@ def scene2image(steps=20):
 
 def image2video():
     # Get the images and audio files and sort them
+    # TODO: add the text to the images
     image_filenames = ["images/" + i for i in os.listdir("images")]
     image_filenames = sorted(image_filenames, key=lambda x: int(x.split("_")[1].split(".")[0]))
     audio_files = os.listdir("audio")
