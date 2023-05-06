@@ -1,4 +1,7 @@
-def sentence_prompt(sentences):
+from typing import List
+
+
+def sentence_prompt(sentences:  List[str]):
     prompt = """
 It is your job to generate a prompt for an image generating model.
 The prompt that you generate should be descriptive and vivid and you can be creative if you want to.
@@ -24,6 +27,19 @@ START EXAMPLE
 [Prompt 4] A happy community, a burning house, a firefighter
 
 END EXAMPLE
-"""
+    """
     for idx, sentence in enumerate(sentences): prompt = prompt + f"\n[Text {idx}] {sentence}"
+    return prompt
+
+def story_prompt(topics: List[str]):
+    if len(topics) == 1: topics.append("")
+    prompt = f"""
+You are a story generating bot.
+It is your job to generate a short story for children.
+Add a lot of details about the characters and the events in the story.
+Each paragraph should have at least 5 sentences.
+Do not make the sentences too long.
+The following topics should be included in the story: {topics[0]} {', '.join(topics[1:])}.
+    """
+
     return prompt
