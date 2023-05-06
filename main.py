@@ -10,9 +10,9 @@ from tqdm import tqdm
 from noisereduce import reduce_noise
 from typing import List
 from nltk.tokenize import sent_tokenize
-
 import openai
-from api_keys import open_ai_key
+
+open_ai_key = os.environ.get("OPENAI_API_KEY")
 openai.api_key = open_ai_key
 
 from stable_diffusion.model import generate, DDIMSampler, LatentDiffusion
@@ -180,8 +180,6 @@ def main():
     storyteller.story2audio()
     storyteller.scene2image()
     storyteller.image2video()
-    
-    # TODO: remove audio and images after video is made
 
 
 if __name__=="__main__": main()
