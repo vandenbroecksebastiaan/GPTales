@@ -8,9 +8,9 @@ from moviepy.audio.io.AudioFileClip import AudioFileClip
 import ffmpeg
 from tqdm import tqdm
 from noisereduce import reduce_noise
-from typing import List
 from nltk.tokenize import sent_tokenize
 import openai
+from multiprocessing import Pool
 
 open_ai_key = os.environ.get("OPENAI_API_KEY")
 openai.api_key = open_ai_key
@@ -21,15 +21,21 @@ from config import config
 from bark.bark.generation import generate_text_semantic, SAMPLE_RATE, clean_models, _clear_cuda_cache
 from bark.bark.api import semantic_to_waveform
 
-from prompts import sentence_prompt, story_prompt
+from prompts import sentence_prompt, story_prompt, story_clean_prompt
 
 class GPTales:
-    def __init__(self, story_number: int):
+    def __init__(self, story_number: int = None, speaker: str = None):
         self.story_number = story_number
         self.sample_rate = SAMPLE_RATE
-        self.speaker = "v2/en_speaker_9"   # Female voice
+        self.speaker = speaker
         self.scenes = []
         self.paragraphs = []
+
+        if story_number is None:
+            self.story_number = max([int(i.split("_")[1].split(".")[0]) for i in
+                                        os.listdir("videos")]) + 1
+        else:
+            self.story_number = story_number
 
     def _gpt_call(self, prompt: str, max_tokens: int,
                   model: str = "gpt-3.5-turbo") -> str:
@@ -47,8 +53,7 @@ class GPTales:
 
     def generate_story(self):
         """Generates a story with certain topics using GPT-3.5-turbo."""
-        print("-"*80)
-        print("Welcome to GPTales! I am a combination of GPT-3, Bark and stable" \
+        print("\nWelcome to GPTales! I am a combination of GPT-3, Bark and stable" \
               " diffusion. Together, we will create a story that is animated" \
               " and has vocals. Let's start with the story.")
 
@@ -67,14 +72,37 @@ class GPTales:
             new_paragraph = self._generate_paragraph(story="".join([i+"\n" for i in self.paragraphs]))
             self.paragraphs.append(new_paragraph)
             for i in self.paragraphs: print(i, "\n")
-            next = input("Do you want to continue the story? [y/n] \n")
+            next = input("Do you want to continue the story? [y/n] ")
             if next == "n": break
+            print("\n")
         
         # To ensure that the sentences are properly split into a list
         story = [sent_tokenize(i) for i in self.paragraphs]
         story = [i for j in story for i in j]
         if "The end." in story: story.remove("The end.")
         self.story = story
+        
+    def generate_clean_story(self):
+        """Transforms the story by removing names of characters and places,
+           and replacing them with descriptions. This is done to ensure that
+           the story can be animated, because stable diffusion won't recognize
+           such names."""
+        prompt = story_clean_prompt("".join(self.story))
+        names_descriptions = self._gpt_call(prompt=prompt, max_tokens=1000)
+        names_descriptions = names_descriptions.split("\n")
+        names_descriptions = [i.lower().replace('"', "") for i in names_descriptions]
+        names_descriptions = [i.split(":") for i in names_descriptions]
+        names_descriptions = [i for i in names_descriptions if len(i) > 1]
+        names_descriptions = {i[0].strip(): i[1].strip() for i in names_descriptions}
+        names_descriptions = {i: "["+j+"]" for i, j in names_descriptions.items()}
+
+        story_clean = []
+        for sentence in self.story:
+            for name, description in names_descriptions.items():
+                    sentence = sentence.lower().replace(name, description)
+            story_clean.append(sentence)
+        
+        self.story_clean = story_clean
 
     def story2scene(self):
         """Uses a LLM to generate a prompt for each sentence in the story. The
@@ -87,22 +115,33 @@ class GPTales:
         
         # TODO: ask the LLM to generate a prompt for when music should be added
         # to the story and generate this music using BARK
-    
-        # Make story into a nested list of 5 elements each and a remainder
-        story_nested = [self.story[i:i+5] for i in range(0, len(self.story), 5)]
         
-        pbar = tqdm(story_nested, leave=False, desc="Generating scenes",
-                    total=len(story_nested))
-        for story_subset in pbar:
+        # TODO: make this into a sliding function to better take into account
+        # the context of the story when generating the scenes
+
+        print("Generating scenes...")
+
+        # Make story into a nested list of 5 elements each and a remainder
+        story_nested = [self.story_clean[i:i+5] for i in range(0, len(self.story_clean), 5)]
+
+        def get_scenes(story_subset):
             prompt = sentence_prompt(story_subset)
-            scenes = self._gpt_call(prompt=prompt, max_tokens=1000)
-            scenes = scenes.split("\n")
-            scenes = [i[11:].replace(".", "").strip() for i in scenes]
-            assert len(scenes) == len(story_subset)
-            self.scenes.extend(scenes)
+            # Loop at least once to ensure that there is a scene for each sentence
+            while True:
+                scenes = self._gpt_call(prompt=prompt, max_tokens=1000)
+                scenes = scenes.split("\n")
+                scenes = [i[11:].replace(".", "").strip() for i in scenes]
+                if len(scenes) == len(story_subset): return scenes
+        
+        with Pool(10): scenes = [get_scenes(i) for i in story_nested]
+        self.scenes = [i for j in scenes for i in j]
+        
+        for i, j, k in zip(self.story, self.story_clean, self.scenes):
+            print(i, "\n", j, "\n", k, "\n\n")
     
-    def story2audio(self):
+    def story2audio(self, temp):
         """Generates audio for each sentence in the story."""
+        # TODO: capitalization can be used for emphasis.
         for i in os.listdir("tmp/audio"): os.remove(os.path.join("tmp/audio/", i))
         before_silence = np.zeros(int(np.random.uniform(0, 0.5) * self.sample_rate))
         after_silence = np.zeros(int(np.random.uniform(0, 0.5) * self.sample_rate))
@@ -110,7 +149,7 @@ class GPTales:
                     total=len(self.story))
         for idx, sentence in pbar:
             semantic_tokens = generate_text_semantic(
-                sentence, history_prompt=self.speaker, temp=0.5, min_eos_p=0.05
+                sentence, history_prompt=self.speaker, temp=temp, min_eos_p=0.05
             )
             audio_array = semantic_to_waveform(semantic_tokens,
                                                history_prompt=self.speaker)
@@ -134,7 +173,7 @@ class GPTales:
         model.cuda()
         model.eval()
         sampler = DDIMSampler(model, device="cuda")
-        post_prompt = ", anime, digital art, vivid, highly detailed, 4k, 8k"
+        post_prompt = ", digital art, vivid, highly detailed"
         pbar = tqdm(enumerate(self.scenes), leave=False, desc="Generating images",
                     total=len(self.scenes))
         for idx, scene in pbar:
@@ -152,6 +191,8 @@ class GPTales:
         audio_files = os.listdir("tmp/audio")
         audio_files = sorted(audio_files,
                              key=lambda x: int(x.split("_")[1].split(".")[0]))
+
+        # TODO: add a some noise to when the images shift
         
         # Get duration of the scene
         audio_duration = [ffmpeg.probe("tmp/audio/" + i)["format"]["duration"] for i
@@ -165,6 +206,7 @@ class GPTales:
     
         # Add audio to the video and save
         image_clip = image_clip.set_audio(audio_clip)
+        # Find the last story number in the videos folder
         image_clip.write_videofile(f"videos/video_{self.story_number}.mp4", fps=24)
         
         # Remove audio and images
@@ -174,11 +216,12 @@ class GPTales:
 
 def main():
     # TODO: add voice modifiers such as [dramatic] or [music] to the story
-    storyteller = GPTales(story_number=3)
+    storyteller = GPTales(speaker="en_speaker_0")
     storyteller.generate_story()
+    storyteller.generate_clean_story()
     storyteller.story2scene()
-    storyteller.story2audio()
-    storyteller.scene2image()
+    storyteller.story2audio(temp=0.5)
+    storyteller.scene2image(steps=50)
     storyteller.image2video()
 
 
