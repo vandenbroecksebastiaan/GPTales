@@ -24,7 +24,7 @@ and you can choose yourself whether the story continues or not.
 
 Examples can be found in the videos folder.
 
-<video src="video_6.mp4"/>
+<video src="video_6.mp4"/ width=100%>
 
 ## License
 The code under stable_diffusion/ has been adapted from and provided under MIT
