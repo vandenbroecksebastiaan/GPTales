@@ -23,9 +23,11 @@ and you can choose yourself whether the story continues or not.
 ## Example
 
 Examples can be found in the videos folder. A story about an astronaut that is lost in space:
+
 https://github.com/vandenbroecksebastiaan/GPTales/assets/101555259/1746797c-9896-4667-b56c-6bd99fda5380
 
 Or a story about a group of rebels that fight in a futuristic utopia:
+
 https://github.com/vandenbroecksebastiaan/GPTales/assets/101555259/4b55d8cf-14eb-443a-81dc-00d2861f74cf
 
 ## License
