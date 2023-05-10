@@ -24,8 +24,7 @@ and you can choose yourself whether the story continues or not.
 
 Examples can be found in the videos folder.
 
-<video src="videos/video_6.mp4" controls="controls" style="max-width: 730px;">
-</video>
+https://github.com/vandenbroecksebastiaan/GPTales/assets/101555259/1746797c-9896-4667-b56c-6bd99fda5380
 
 ## License
 The code under stable_diffusion/ has been adapted from and provided under MIT
