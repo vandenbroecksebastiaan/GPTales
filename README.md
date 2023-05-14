@@ -16,16 +16,19 @@ You need about 12GB of VRAM and there should be an OpenAI API key in your enviro
 export OPENAI_API_KEY=YOUR_API_KEY_HERE
 ```
 
-After running main.py, GPTales will ask you for some topics to generate a story
-you need to provide at least one. Next, it will generate paragraphs one by one
+After running main.py, GPTales will ask you for some topics to generate a story.
+You need to provide at least one. Next, it will generate paragraphs one by one
 and you can choose yourself whether the story continues or not.
 
 ## Example
 
-Examples can be found in the videos folder.
+Examples can be found in the videos folder. A story about an astronaut that is lost in space:
 
-<video src="videos/video_6.mp4" controls="controls" style="max-width: 730px;">
-</video>
+https://github.com/vandenbroecksebastiaan/GPTales/assets/101555259/1746797c-9896-4667-b56c-6bd99fda5380
+
+Or a story about a group of rebels that fight in a futuristic utopia:
+
+https://github.com/vandenbroecksebastiaan/GPTales/assets/101555259/4b55d8cf-14eb-443a-81dc-00d2861f74cf
 
 ## License
 The code under stable_diffusion/ has been adapted from and provided under MIT
